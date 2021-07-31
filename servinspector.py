@@ -109,7 +109,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), ModulesFolderName))
     # Import custom modules
     try:
-        import mytestmodule
+        import lgtmreslib
     except Exception as Error:
         print('--- Exception raised while importing custom modules - Details: ---')
         print('--- %s ---' % Error)
