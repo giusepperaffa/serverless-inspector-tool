@@ -1,8 +1,9 @@
-# =====================
-# Import Python Modules
-# =====================
+# ========================================
+# Import Python Modules (Standard Library)
+# ========================================
 import argparse
 import os
+import re
 import sys
 import yaml
 
@@ -16,6 +17,12 @@ class TestLauncherCls:
         self.SetDefaultValues()
         self.TestLauncherLogic()
     # === Method ===
+    def ExtractAccessTokenFromFile(self):
+        # A regular expression is used to remove all newline characters
+        NewLineRegExp = re.compile(r'\n')
+        with open(os.path.join(self.ConfigFolderFullPath, self.AccessTokenFileName), mode='r') as AccessTokenFileObj:
+            self.AccessToken = NewLineRegExp.sub('', AccessTokenFileObj.read())
+    # === Method ===
     def ExtractDictFromConfigFile(self):
         assert os.path.splitext(self.ConfigObj.file)[1] in ('.yml', '.yaml'), \
             '--- Inconsistency detected - The specified configuration file is not a YAML file ---'
@@ -27,6 +34,8 @@ class TestLauncherCls:
         # Instance variable containing the full path of the folder where the
         # configuration file for the test execution has to be stored.
         self.ConfigFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'config')
+        # Name of the file containing the LGTM Access Token
+        self.AccessTokenFileName = 'lgtm_access_token.txt'
     # === Method ===
     def TestLauncherLogic(self):
         if self.ConfigObj.conversion is not None:
@@ -41,12 +50,14 @@ class TestLauncherCls:
             print('--- A test on {target} code is about to be launched ---'.format(target=self.ConfigObj.target))
             print('--- Configuration file full path: {path} ---'.format(path=\
                 os.path.join(self.ConfigFolderFullPath, self.ConfigObj.file)))
+            self.ExtractAccessTokenFromFile()
             self.ExtractDictFromConfigFile()
-            print('--- GitHub repository: {repository} ---'.format(repository=\
-                self.ConfigDict['GitHubRepositories'][self.ConfigObj.target.capitalize() + 'Code']))
+            print('--- LGTM Project URL: {url} ---'.format(url=\
+                self.ConfigDict['LGTMProjectURLs'][self.ConfigObj.target.capitalize() + 'Code']))
         elif (self.ConfigObj.target is not None) and (self.ConfigObj.self_test):
             print('--- A self-test on {target} code is about to be launched ---'.format(target=self.ConfigObj.target))
             print('--- No configuration file will be used ---')
+            self.ExtractAccessTokenFromFile()
         else:
             print('--- The input arguments configuration is inconsistent - No test will be launched ---')
 
