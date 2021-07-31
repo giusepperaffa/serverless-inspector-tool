@@ -2,9 +2,11 @@
 # Import Python Modules (Standard Library)
 # ========================================
 import argparse
+import logging
 import os
 import re
 import sys
+import time
 import yaml
 
 # =======
@@ -15,6 +17,7 @@ class TestLauncherCls:
     def __init__(self, ConfigObj):
         self.ConfigObj = ConfigObj
         self.SetDefaultValues()
+        self.LogFileSetUp()
         self.TestLauncherLogic()
     # === Method ===
     def ExtractAccessTokenFromFile(self):
@@ -29,6 +32,15 @@ class TestLauncherCls:
         with open(os.path.join(self.ConfigFolderFullPath, self.ConfigObj.file), mode='r') as ConfigFileObj:
             self.ConfigDict = yaml.load(ConfigFileObj)
     # === Method ===
+    def LogFileSetUp(self):
+        LogFileExp = re.compile(r'(\s|:)')
+        LogFileId = '_'.join(LogFileExp.sub('_', time.ctime()).split('_')[1:-1]).lower()
+        # The log file basename will be modified by concatenating a timestamp
+        LogFileBaseName = 'queries_exec_times'
+        logging.basicConfig(filename=LogFileBaseName + '_' + LogFileId + '.log', filemode='w', level=logging.INFO,\
+            format='%(message)s')
+        logging.info(self.DataSep.join(['Query', 'Time(s)']))
+    # === Method ===
     def SetDefaultValues(self):
         self.ProgramFolderFullPath = os.path.dirname(os.path.realpath(sys.argv[0]))
         # Instance variable containing the full path of the folder where the
@@ -36,6 +48,16 @@ class TestLauncherCls:
         self.ConfigFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'config')
         # Name of the file containing the LGTM Access Token
         self.AccessTokenFileName = 'lgtm_access_token.txt'
+        # Data separator (log and report files)
+        self.DataSep = '\t'
+    # === Method ===
+    def SubmitQueries(self):
+        for Query in ('A', 'B', 'C', 'D'):
+            print('--- Submitting query: %s ---' % Query)
+            QueryStartTime = time.time()
+            time.sleep(3)
+            QueryEndTime = time.time()
+            logging.info(self.DataSep.join([Query, str(QueryEndTime - QueryStartTime)]))
     # === Method ===
     def TestLauncherLogic(self):
         if self.ConfigObj.conversion is not None:
@@ -54,10 +76,12 @@ class TestLauncherCls:
             self.ExtractDictFromConfigFile()
             print('--- LGTM Project URL: {url} ---'.format(url=\
                 self.ConfigDict['LGTMProjectURLs'][self.ConfigObj.target.capitalize() + 'Code']))
+            self.SubmitQueries()
         elif (self.ConfigObj.target is not None) and (self.ConfigObj.self_test):
             print('--- A self-test on {target} code is about to be launched ---'.format(target=self.ConfigObj.target))
             print('--- No configuration file will be used ---')
             self.ExtractAccessTokenFromFile()
+            self.SubmitQueries()
         else:
             print('--- The input arguments configuration is inconsistent - No test will be launched ---')
 
@@ -81,7 +105,7 @@ def ProcessProgramInputs():
         help='File - Configuration file name used when the self-test mode is disabled')
     ConfigGroupParserObj.add_argument('-s', '--self-test', action='store_true', \
         help='Self-test - The CodeQL queries will be tested against code samples provided with this tool')
-    # Create the Namespace object. It contains the parameter passed via command line
+    # Return the Namespace object. It contains the parameters passed via command line
     return ParserObj.parse_args()
 
 def RemoveFilesFromFolder(FolderFullPath, FileExtension):
