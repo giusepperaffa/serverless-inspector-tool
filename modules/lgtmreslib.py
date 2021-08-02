@@ -24,7 +24,7 @@ class LGTMAPIInterfaceCls:
         self.HeadersDict['Authorization'] = 'Bearer {token}'.format(token=self.AccessToken)
         # HTTP requests are attempted multiple times in case an exception is raised
         self.MaxAttemptNum = 10
-        # Methods with HTTP requests are implemented with a timeout option
+        # Methods with HTTP requests are implemented with a timeout option (seconds)
         self.TimeOut = 15
         self.WaitTimeAfterException = 120
     # === Method ===
@@ -96,7 +96,7 @@ class LGTMAPIInterfaceCls:
     def GetQueryJobStatus(self):
         print('--- Method {name} - Start ---'.format(name=inspect.stack()[0][3]))
         # Delete from header dictionary entry needed when submitting a query
-        if 'Content-Type' in self.HeadersDict: del HeadersDict['Content-Type']
+        if 'Content-Type' in self.HeadersDict: del self.HeadersDict['Content-Type']
         for AttemptNum in range(1, self.MaxAttemptNum + 1):
             print('--- Attempt number %s ---' % AttemptNum)
             try:
@@ -124,7 +124,7 @@ class LGTMAPIInterfaceCls:
     def GetResultsSummary(self):
         print('--- Method {name} - Start ---'.format(name=inspect.stack()[0][3]))
         # Delete from header dictionary entry needed when submitting a query
-        if 'Content-Type' in self.HeadersDict: del HeadersDict['Content-Type']
+        if 'Content-Type' in self.HeadersDict: del self.HeadersDict['Content-Type']
         for AttemptNum in range(1, self.MaxAttemptNum + 1):
             print('--- Attempt number %s ---' % AttemptNum)
             try:
@@ -152,7 +152,7 @@ class LGTMAPIInterfaceCls:
     def GetQueryJobResults(self):
         print('--- Method {name} - Start ---'.format(name=inspect.stack()[0][3]))
         # Delete from header dictionary entry needed when submitting a query
-        if 'Content-Type' in self.HeadersDict: del HeadersDict['Content-Type']
+        if 'Content-Type' in self.HeadersDict: del self.HeadersDict['Content-Type']
         # For details about the parameter dictionary to be passed to this HTTP request,
         # please refer to LGTM API documentation
         ParamsDict = {'nofilter': False}
