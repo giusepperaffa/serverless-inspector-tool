@@ -32,32 +32,111 @@ class TestLauncherCls:
         with open(os.path.join(self.ConfigFolderFullPath, self.ConfigObj.file), mode='r') as ConfigFileObj:
             self.ConfigDict = yaml.load(ConfigFileObj)
     # === Method ===
+    def GenerateReport(self):
+        # Create test execution-specific folder if it does not exist
+        TestFolderFullPath = os.path.join(self.ReportsFolderFullPath, 'test_' + self.TestExecId)
+        if not os.path.isdir(TestFolderFullPath): os.mkdir(TestFolderFullPath)
+        # print('*** Results dictionary to be processed ***')
+        # print(self.ResultsDict)
+        # print()
+        with open(os.path.join(TestFolderFullPath, os.path.splitext(self.QueryFileName)[0] + '.txt') , mode='w') as ReportFileObj:
+            ReportFileObj.write(self.DataSep.join(['File', 'URL']) + '\n')
+            for NestedList in self.ResultsDict['data']:
+                for DataDict in NestedList:
+                    try:
+                        ReportFileObj.write(self.DataSep.join([DataDict['file'], DataDict['url']]) + '\n')
+                        # print(DataDict['file'])
+                        # print(DataDict['url'])
+                    except KeyError as Error:
+                        print('--- The dictionary being processed does not include the key: %s ---' % Error)
+
+    # === Method ===
     def LogFileSetUp(self):
-        LogFileExp = re.compile(r'(\s|:)')
-        LogFileId = '_'.join(LogFileExp.sub('_', time.ctime()).split('_')[1:-1]).lower()
-        # The log file basename will be modified by concatenating a timestamp
+        # The log file basename will be modified by concatenating the test execution id
         LogFileBaseName = 'queries_exec_times'
-        logging.basicConfig(filename=LogFileBaseName + '_' + LogFileId + '.log', filemode='w', level=logging.INFO,\
-            format='%(message)s')
+        logging.basicConfig(filename=LogFileBaseName + '_' + self.TestExecId + '.log', filemode='w',\
+            level=logging.INFO, format='%(message)s')
         logging.info(self.DataSep.join(['Query', 'Time(s)']))
     # === Method ===
     def SetDefaultValues(self):
-        self.ProgramFolderFullPath = os.path.dirname(os.path.realpath(sys.argv[0]))
-        # Instance variable containing the full path of the folder where the
-        # configuration file for the test execution has to be stored.
-        self.ConfigFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'config')
         # Name of the file containing the LGTM Access Token
         self.AccessTokenFileName = 'lgtm_access_token.txt'
         # Data separator (log and report files)
         self.DataSep = '\t'
+        # Test execution identifier for log and report log file
+        TestExecIdRegExp = re.compile(r'(\s|:)')
+        self.TestExecId = '_'.join(TestExecIdRegExp.sub('_', time.ctime().replace('  ', ' ')).split('_')[1:-1]).lower()
+        # Full path of the folder where this file is stored
+        self.ProgramFolderFullPath = os.path.dirname(os.path.realpath(sys.argv[0]))
+        # Full path of the folder where the configuration file is stored
+        self.ConfigFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'config')
+        # Full path of the folder where the query files are stored
+        self.QueryFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'codeql')
+        # Full path of the folder where the report files are stored
+        self.ReportsFolderFullPath = os.path.join(self.ProgramFolderFullPath, 'reports')
+        # Create generic report folder if it does not exist
+        if not os.path.isdir(self.ReportsFolderFullPath): os.mkdir(self.ReportsFolderFullPath)
+        # LGTM projects used in self-test mode
+        self.SelfTestConfigDict = {'LGTMProjectURLs': {}}
+        self.SelfTestConfigDict['LGTMProjectURLs']['ApplicationCode'] = 'https://lgtm.com/projects/g/giusepperaffa/serverless-inspector-test/'
+        self.SelfTestConfigDict['LGTMProjectURLs']['InfrastructureCode'] = 'https://lgtm.com/projects/g/giusepperaffa/infrastructure-inspector-test/'
+        # Timeout parameter (seconds)
+        self.TimeOut = 300
+        # Wait times (seconds)
+        self.WaitTime = 20
+        self.WaitTimeAfterException = 120
+
     # === Method ===
-    def SubmitQueries(self):
-        for Query in ('A', 'B', 'C', 'D'):
-            print('--- Submitting query: %s ---' % Query)
-            QueryStartTime = time.time()
-            time.sleep(3)
-            QueryEndTime = time.time()
-            logging.info(self.DataSep.join([Query, str(QueryEndTime - QueryStartTime)]))
+    def SubmitQueries(self, LGTMProjectURL):
+        # Create instance of LGTM API interface class
+        LGTMAPIConfigDict = {'LGTMProjectURL': LGTMProjectURL, 'AccessToken': self.AccessToken}
+        self.LGTMAPIInterfaceObj = lgtmreslib.LGTMAPIInterfaceCls(LGTMAPIConfigDict)
+        # The status coe will be returned as an integer
+        StatusCode, ProjectId = self.LGTMAPIInterfaceObj.GetProjectId()
+        print('--- LGTM Project Id: %s ---' % ProjectId)
+        if (StatusCode == 200) and (ProjectId is not None):
+            # for QueryFileName in os.listdir(os.path.join(self.QueryFolderFullPath, self.ConfigObj.target)):
+            for QueryFileName in ('A',):
+                try:
+                    print()
+                    self.QueryFileName = QueryFileName
+                    print('--- Submitting query: %s ---' % self.QueryFileName)
+                    QueryStartTime = time.time()
+                    # Submit query via interface object
+                    # StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery(os.path.join(self.QueryFolderFullPath,\
+                    #     self.ConfigObj.target, self.QueryFileName))
+                    StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery('/home/giuseppe/Desktop/Python_Test/codeql/infrastructure/query_iac_multiple_action.ql')
+                    # StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery('/home/giuseppe/Desktop/Python_Test/codeql/application/query_python_subprocess_shell_true.ql')
+                    print('--- Query Id: %s ---' % QueryId)
+                    assert (StatusCode == 202), '--- Query submission unsuccessful ---'
+                    # Get the number of pending queries
+                    StatusCode, NumOfPendingQueries = self.LGTMAPIInterfaceObj.GetQueryJobStatus()
+                    # Wait until there is no pending query or a timeout
+                    QueryExecutionStartTime = time.time()
+                    while (NumOfPendingQueries != 0) and (time.time() - QueryExecutionStartTime <= self.TimeOut):
+                        print('--- Waiting until end of query execution... ---')
+                        time.sleep(self.WaitTime)
+                        StatusCode, NumOfPendingQueries = self.LGTMAPIInterfaceObj.GetQueryJobStatus()
+                    print('--- Number of pending queries: %s ---' % NumOfPendingQueries)
+                    assert (StatusCode == 200) and (NumOfPendingQueries == 0), '--- Problem detected during the execution of the query ---'
+                    # Get query results summary
+                    StatusCode, ResultsSummary = self.LGTMAPIInterfaceObj.GetResultsSummary()
+                    print('--- Results summary: %s ---' % ResultsSummary)
+                    assert (StatusCode == 200) and (ResultsSummary == 'success'), '--- Problem detected in the results summary ---'
+                    # Get query results
+                    StatusCode, self.ResultsDict = self.LGTMAPIInterfaceObj.GetQueryJobResults()
+                    QueryEndTime = time.time()
+                    logging.info(self.DataSep.join([QueryFileName, str(QueryEndTime - QueryStartTime)]))
+                    # Generate report containing query results
+                    self.GenerateReport()
+                except Exception as Error:
+                    print('--- Exception raised - Details: ---')
+                    print('--- %s ---' % Error)
+                    print('--- Waiting before submitting new query... ---')
+                    time.sleep(self.WaitTimeAfterException)
+        else:
+            print('--- HTTP request unsuccessful - No project id retrieved ---')
+            print('--- No query will be submitted ---')
     # === Method ===
     def TestLauncherLogic(self):
         if self.ConfigObj.conversion is not None:
@@ -76,12 +155,12 @@ class TestLauncherCls:
             self.ExtractDictFromConfigFile()
             print('--- LGTM Project URL: {url} ---'.format(url=\
                 self.ConfigDict['LGTMProjectURLs'][self.ConfigObj.target.capitalize() + 'Code']))
-            self.SubmitQueries()
+            self.SubmitQueries(self.ConfigDict['LGTMProjectURLs'][self.ConfigObj.target.capitalize() + 'Code'])
         elif (self.ConfigObj.target is not None) and (self.ConfigObj.self_test):
             print('--- A self-test on {target} code is about to be launched ---'.format(target=self.ConfigObj.target))
             print('--- No configuration file will be used ---')
             self.ExtractAccessTokenFromFile()
-            self.SubmitQueries()
+            self.SubmitQueries(self.SelfTestConfigDict['LGTMProjectURLs'][self.ConfigObj.target.capitalize() + 'Code'])
         else:
             print('--- The input arguments configuration is inconsistent - No test will be launched ---')
 
@@ -128,12 +207,6 @@ def YamlToDictConverter(YamlFolderFullPath, PyFolderFullPath):
             CommentString = 'Infrastructure Dictionary'
             PyFileObj.write('\n'.join(['# ' + ('=' * len(CommentString)), '# ' + CommentString, '# ' + ('=' * len(CommentString))]) + '\n')
             PyFileObj.write('InfrastructureDict = ' + str(InfrastructureDict))
-
-
-
-
-
-
 
 # ====
 # Main
