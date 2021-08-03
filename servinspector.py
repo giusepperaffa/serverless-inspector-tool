@@ -5,6 +5,7 @@ import argparse
 import logging
 import os
 import re
+import shutil
 import sys
 import time
 import yaml
@@ -36,20 +37,13 @@ class TestLauncherCls:
         # Create test execution-specific folder if it does not exist
         TestFolderFullPath = os.path.join(self.ReportsFolderFullPath, 'test_' + self.TestExecId)
         if not os.path.isdir(TestFolderFullPath): os.mkdir(TestFolderFullPath)
-        # print('*** Results dictionary to be processed ***')
-        # print(self.ResultsDict)
-        # print()
+        # Start generation of report file (.txt)
         with open(os.path.join(TestFolderFullPath, os.path.splitext(self.QueryFileName)[0] + '.txt') , mode='w') as ReportFileObj:
             ReportFileObj.write(self.DataSep.join(['File', 'URL']) + '\n')
             for NestedList in self.ResultsDict['data']:
-                for DataDict in NestedList:
-                    try:
-                        ReportFileObj.write(self.DataSep.join([DataDict['file'], DataDict['url']]) + '\n')
-                        # print(DataDict['file'])
-                        # print(DataDict['url'])
-                    except KeyError as Error:
-                        print('--- The dictionary being processed does not include the key: %s ---' % Error)
-
+                for DataDict in (FltDataDict for FltDataDict in NestedList if (('file' in FltDataDict) and ('url' in FltDataDict))):
+                    ReportFileObj.write(self.DataSep.join([DataDict['file'], DataDict['url']]) + '\n')
+        print('--- Report file successfully generated ---')
     # === Method ===
     def LogFileSetUp(self):
         # The log file basename will be modified by concatenating the test execution id
@@ -85,7 +79,6 @@ class TestLauncherCls:
         # Wait times (seconds)
         self.WaitTime = 20
         self.WaitTimeAfterException = 120
-
     # === Method ===
     def SubmitQueries(self, LGTMProjectURL):
         # Create instance of LGTM API interface class
@@ -147,6 +140,10 @@ class TestLauncherCls:
         elif self.ConfigObj.delete_logs:
             print('--- All log files are about to be deleted ---')
             RemoveFilesFromFolder(self.ProgramFolderFullPath, '.log')
+        elif self.ConfigObj.remove_reports:
+            print('--- All report files are about to be deleted ---')
+            shutil.rmtree(self.ReportsFolderFullPath, ignore_errors=True)
+            os.mkdir(self.ReportsFolderFullPath)
         elif (self.ConfigObj.target is not None) and (self.ConfigObj.file is not None):
             print('--- A test on {target} code is about to be launched ---'.format(target=self.ConfigObj.target))
             print('--- Configuration file full path: {path} ---'.format(path=\
@@ -175,6 +172,8 @@ def ProcessProgramInputs():
         help='Conversion - Source folder full path with YAML files and destination folder full path must be specified')
     ModeGroupParserObj.add_argument('-d', '--delete-logs', action='store_true', \
         help='Delete log files - All log files (*.log) within the program folder will be deleted')
+    ModeGroupParserObj.add_argument('-r', '--remove-reports', action='store_true', \
+        help='Remove reports - All report files (*.txt) within the dedicated folder will be removed')
     ModeGroupParserObj.add_argument('-t', '--target', action='store', type=str, metavar='target', \
         help="Target - Specifies whether the tool will be used to test infrastructure code ('infrastructure') or \
         application code ('application')", choices=['infrastructure', 'application'])
