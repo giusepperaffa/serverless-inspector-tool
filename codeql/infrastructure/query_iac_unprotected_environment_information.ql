@@ -31,5 +31,5 @@ from Dict d, Dict environmentDict, string environmentKey, string environmentValu
 where environmentDict = extract_environment_dict(d) and
 environmentKey = extract_environment_key(environmentDict) and environmentKey.regexpMatch("(?si).*(key|secret|token)$") and
 environmentValue = extract_environment_value(environmentDict) and (not environmentValue.matches("${%"))
-select environmentValue, "Identified potentially unprotected environment information - Check key " + environmentKey
+select d, "Identified potentially unprotected environment information - Check key " + environmentKey + " with value " + environmentValue
 
