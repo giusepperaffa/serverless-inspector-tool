@@ -72,8 +72,8 @@ class TestLauncherCls:
         if not os.path.isdir(self.ReportsFolderFullPath): os.mkdir(self.ReportsFolderFullPath)
         # LGTM projects used in self-test mode
         self.SelfTestConfigDict = {'LGTMProjectURLs': {}}
-        self.SelfTestConfigDict['LGTMProjectURLs']['ApplicationCode'] = 'https://lgtm.com/projects/g/giusepperaffa/serverless-inspector-test/'
-        self.SelfTestConfigDict['LGTMProjectURLs']['InfrastructureCode'] = 'https://lgtm.com/projects/g/giusepperaffa/infrastructure-inspector-test/'
+        self.SelfTestConfigDict['LGTMProjectURLs']['ApplicationCode'] = 'https://lgtm.com/projects/g/giusepperaffa/si-tool-application-self-test/'
+        self.SelfTestConfigDict['LGTMProjectURLs']['InfrastructureCode'] = 'https://lgtm.com/projects/g/giusepperaffa/si-tool-infrastructure-self-test/'
         # Timeout parameter (seconds)
         self.TimeOut = 300
         # Wait times (seconds)
@@ -88,18 +88,15 @@ class TestLauncherCls:
         StatusCode, ProjectId = self.LGTMAPIInterfaceObj.GetProjectId()
         print('--- LGTM Project Id: %s ---' % ProjectId)
         if (StatusCode == 200) and (ProjectId is not None):
-            # for QueryFileName in os.listdir(os.path.join(self.QueryFolderFullPath, self.ConfigObj.target)):
-            for QueryFileName in ('A',):
+            for QueryFileName in os.listdir(os.path.join(self.QueryFolderFullPath, self.ConfigObj.target)):
                 try:
                     print()
                     self.QueryFileName = QueryFileName
                     print('--- Submitting query: %s ---' % self.QueryFileName)
                     QueryStartTime = time.time()
                     # Submit query via interface object
-                    # StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery(os.path.join(self.QueryFolderFullPath,\
-                    #     self.ConfigObj.target, self.QueryFileName))
-                    StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery('/home/giuseppe/Desktop/Python_Test/codeql/infrastructure/query_iac_multiple_action.ql')
-                    # StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery('/home/giuseppe/Desktop/Python_Test/codeql/application/query_python_subprocess_shell_true.ql')
+                    StatusCode, QueryId = self.LGTMAPIInterfaceObj.SubmitQuery(os.path.join(self.QueryFolderFullPath,\
+                        self.ConfigObj.target, self.QueryFileName))
                     print('--- Query Id: %s ---' % QueryId)
                     assert (StatusCode == 202), '--- Query submission unsuccessful ---'
                     # Get the number of pending queries
