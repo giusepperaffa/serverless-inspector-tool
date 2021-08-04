@@ -37,13 +37,21 @@ class TestLauncherCls:
         # Create test execution-specific folder if it does not exist
         TestFolderFullPath = os.path.join(self.ReportsFolderFullPath, 'test_' + self.TestExecId)
         if not os.path.isdir(TestFolderFullPath): os.mkdir(TestFolderFullPath)
-        # Start generation of report file (.txt)
-        with open(os.path.join(TestFolderFullPath, os.path.splitext(self.QueryFileName)[0] + '.txt') , mode='w') as ReportFileObj:
-            ReportFileObj.write(self.DataSep.join(['File', 'URL']) + '\n')
-            for NestedList in self.ResultsDict['data']:
-                for DataDict in (FltDataDict for FltDataDict in NestedList if (('file' in FltDataDict) and ('url' in FltDataDict))):
-                    ReportFileObj.write(self.DataSep.join([DataDict['file'], DataDict['url']]) + '\n')
-        print('--- Report file successfully generated ---')
+        try:
+            # When a query returns no results, self.ResultsDict will not include a 'data' key
+            # and no report file will be generated
+            assert ('data' in self.ResultsDict), 'The result dictionary does not include the key: data'
+            # Start generation of report file (.txt)
+            with open(os.path.join(TestFolderFullPath, os.path.splitext(self.QueryFileName)[0] + '.txt') , mode='w') as ReportFileObj:
+                ReportFileObj.write(self.DataSep.join(['File', 'URL']) + '\n')
+                for NestedList in self.ResultsDict['data']:
+                    for DataDict in (FltDataDict for FltDataDict in NestedList if (('file' in FltDataDict) and ('url' in FltDataDict))):
+                        ReportFileObj.write(self.DataSep.join([DataDict['file'], DataDict['url']]) + '\n')
+            print('--- Report file successfully generated ---')
+        except AssertionError as Error:
+            print('--- Exception raised - Details: ---')
+            print('--- %s ---' % Error)
+            print('--- No report file will be generated ---')
     # === Method ===
     def LogFileSetUp(self):
         # The log file basename will be modified by concatenating the test execution id
@@ -75,7 +83,7 @@ class TestLauncherCls:
         self.SelfTestConfigDict['LGTMProjectURLs']['ApplicationCode'] = 'https://lgtm.com/projects/g/giusepperaffa/si-tool-application-self-test/'
         self.SelfTestConfigDict['LGTMProjectURLs']['InfrastructureCode'] = 'https://lgtm.com/projects/g/giusepperaffa/si-tool-infrastructure-self-test/'
         # Timeout parameter (seconds)
-        self.TimeOut = 300
+        self.TimeOut = 600
         # Wait times (seconds)
         self.WaitTime = 20
         self.WaitTimeAfterException = 120
