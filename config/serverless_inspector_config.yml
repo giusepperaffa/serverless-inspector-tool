@@ -1,4 +1,3 @@
 LGTMProjectURLs:
-    ApplicationCode: TBC
-    InfrastructureCode: TBC
-    
+    ApplicationCode: https://lgtm.com/projects/g/giusepperaffa/si-tool-application-test/
+    InfrastructureCode: https://lgtm.com/projects/g/giusepperaffa/si-tool-infrastructure-test/
