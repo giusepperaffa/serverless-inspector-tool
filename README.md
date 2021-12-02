@@ -15,7 +15,7 @@ Finally, as detailed in the following table, where **ST** and **TM** stand for *
 | [si-tool-infrastructure-test](https://github.com/giusepperaffa/si-tool-infrastructure-test) | No | **Yes** |  
 
 ## Architecture
-To facilitate its integration into an IDE, the SI tool has been developed in Python with a command-line interface, which implies that it can also be executed, as shown in below, by using an independent terminal window.
+To facilitate its integration into an IDE, the SI tool has been developed in Python with a command-line interface, which implies that it can also be executed, as shown below, by using an independent terminal window.
 
 ![Figure 1](images/SIToolExecutionExample.png)
 
@@ -31,8 +31,17 @@ As [previously mentioned](https://github.com/giusepperaffa/serverless-inspector-
 
 - *Test Mode*. If the test mode is selected, the CodeQL queries are executed to test one of the repositories included in the configuration file specified via the option `-f`. Similarly to the self-test mode, it is the option `-t` that determines the repository actually scanned. A YAML configuration file template, which currently includes the repositories tested as part of this project, can be found within the folder [config](config). Note that the target repositories are specified within the configuration file via their [LGTM URLs](https://lgtm.com/help/lgtm/adding-projects) and not their GitHub URLs.
 
-A summary of all the command-line options, which can be displayed in the used terminal window by using the `-h` or `--help` option, is provided in figure below. Finally, it is worth mentioning that, to improve the user interface, the main script includes a mechanism that detects when incompatible options have been specified.
+A summary of all the command-line options, which can be displayed in the used terminal window by using the `-h` or `--help` option, is provided in the figure below. Finally, it is worth mentioning that, to improve the user interface, the main script includes a mechanism that detects when incompatible options have been specified.
 
-![Figure 2](images/SIToolHelp.png)
+![Figure 3](images/SIToolHelp.png)
 
 ## Implementation
+After illustrating the [architecture](https://github.com/giusepperaffa/serverless-inspector-tool#architecture) and the configuration options of the SI tool, this section aims at succinctly describing its Python implementation. Before providing additional details, it is important to mention that the author has opted for an object-oriented approach and, consequently, used some of the language features that support this programming paradigm.
+
+The aforementioned main script `servinspector.py` contains a set of auxiliary functions. Among them, the most important one is `ProcessProgramInputs`, which relies on the Python standard library module `argparse` to return an object encapsulating the user-specified configuration options. Such object is then passed to the instance of the class `TestLauncherCls`, which manages the logic of the test execution, e.g., by identifying the target repository, through its method `TestLauncherLogic`. The actual execution of the CodeQL queries, however, takes place thanks to the method `SubmitQueries`. The latter, after creating an instance of the interface class `LGTMAPIInterfaceCls`, included in the module `lgtmreslib`, cyclically submits all the relevant queries and checks for consistency what the LGTM interface returns, raising an exception when necessary with the Python command `assert`.
+
+Thanks to the Python standard library module `logging`, the class `TestLauncherCls` also generates a log file containing the execution time of each query and a test report, which will be stored within the folder `reports` of the repository. Note that this folder is not visible in GitHub as it will always contain files ignored by the version control system, but it will be created on the local version of the repository, where reports files will be generated within subfolders identified via a timestamp. Both log and report files can be deleted by the user with the command-line options `-d` and `-r`.
+
+As regards the above-mentioned `LGTMAPIInterfaceCls` class, it contains a collections of methods that have been implemented according to the [LGTM API documentation](https://lgtm.com/help/lgtm/api/api-v1#LGTM-API-specification-Query-jobs) on *query jobs*. More precisely, after initializing the relevant API endpoints within the constructor, an instance of this class allows obtaining the LGTM project ID (method `GetProjectId`), which identifies the target repository, submitting a query (method `SubmitQuery`), checking the status of its execution (method `GetQueryJobStatus`), and, finally, downloading the test results (method `GetResultsSummary` and method `GetQueryJobResults`). It is important to highlight that each method attempts to send an HTTP request multiple times up to a pre-defined maximum, in order to deal with network glitches or the temporary unavailability of the API endpoints. This mechanism is a noteworthy feature, because it greatly facilitates the use of the interface in client code, such as the script `servinspector.py` of the SI tool.
+
+Finally, using the LGTM API is possible only if an [access token](https://lgtm.com/help/lgtm/api/managing-access-tokens) is provided. This is handled by the method `ExtractAccessTokenFromFile` of the class `TestLauncherCls`, which expects to find in the folder `config` a text file named `lgtm_access_token.txt` with this information reported in its first line.
