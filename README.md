@@ -14,6 +14,8 @@ Finally, as detailed in the following table, where **ST** and **TM** stand for *
 | [si-tool-infrastructure-self-test](https://github.com/giusepperaffa/si-tool-infrastructure-self-test) | **Yes** | No |
 | [si-tool-infrastructure-test](https://github.com/giusepperaffa/si-tool-infrastructure-test) | No | **Yes** |  
 
+[Project Video](videos/giuseppe-raffa-static-analysis-of-serverless-applications.mp4)
+
 ## Architecture
 To facilitate its integration into an IDE, the SI tool has been developed in Python with a command-line interface, which implies that it can also be executed, as shown below, by using an independent terminal window.
 
