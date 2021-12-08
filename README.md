@@ -5,7 +5,7 @@ The Serverless Inspector Tool (SI) tool employs the infrastructure and applicati
 
 It is important to highlight that this tool was developed and tested with Ubuntu Linux 18.04 LTS and Python 3.6.9. No tests were conducted with Windows or Mac OS.
 
-Finally, as detailed in the following table, where **ST** and **TM** stand for **Self-test Mode** and **Test Mode** respectively, the SI makes use of four additional public repositories to support its operating modes, which are further described [below](https://github.com/giusepperaffa/serverless-inspector-tool#architecture).
+As detailed in the following table, where **ST** and **TM** stand for **Self-test Mode** and **Test Mode** respectively, the SI makes use of four additional public repositories to support its operating modes, which are further described [below](https://github.com/giusepperaffa/serverless-inspector-tool#architecture).
 
 | GitHub Link | ST | TM |
 | :---: | :---: | :---: |
@@ -13,6 +13,8 @@ Finally, as detailed in the following table, where **ST** and **TM** stand for *
 | [si-tool-application-test](https://github.com/giusepperaffa/si-tool-application-test) | No | **Yes** |
 | [si-tool-infrastructure-self-test](https://github.com/giusepperaffa/si-tool-infrastructure-self-test) | **Yes** | No |
 | [si-tool-infrastructure-test](https://github.com/giusepperaffa/si-tool-infrastructure-test) | No | **Yes** |  
+
+Finally, the SI tool was developed in summer 2021 as part of a project conducted at the Royal Holloway University of London [Centre for Doctoral Training in Cyber Security](https://www.royalholloway.ac.uk/research-and-teaching/departments-and-schools/information-security/studying-here/centre-for-doctoral-training-in-cyber-security-for-the-everyday). For more information about this project, please refer to the [poster](docs/giuseppe-raffa-static-analysis-of-serverless-applications.pdf) available in this repository.     
 
 ## Architecture
 To facilitate its integration into an IDE, the SI tool has been developed in Python with a command-line interface, which implies that it can also be executed, as shown below, by using an independent terminal window.
